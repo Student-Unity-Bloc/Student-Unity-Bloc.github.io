@@ -1,4 +1,0 @@
-{
-  "type" : "FeatureCollection",
-  "features" : [{"type":"Feature","id":4,"geometry":{"type":"Point","coordinates":[35.181543974896151,31.959850931501219]},"properties":{"OBJECTID":4,"name":"المجمع"}}]
-}
