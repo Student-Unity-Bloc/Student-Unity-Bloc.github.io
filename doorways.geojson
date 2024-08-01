@@ -1,4 +1,0 @@
-{
-  "type" : "FeatureCollection",
-  "features" : [{"type":"Feature","id":1,"geometry":{"type":"LineString","coordinates":[[35.184913797923819,31.957248133058638],[35.184999355407051,31.957271159583417]]},"properties":{"OBJECTID":1,"Shape_Length":8.4818922897265079,"Name":"المدخل الجنوبي"}},{"type":"Feature","id":2,"geometry":{"type":"LineString","coordinates":[[35.180196015142158,31.958586775917411],[35.180220695928867,31.958544717239452]]},"properties":{"OBJECTID":2,"Shape_Length":5.2148682948895519,"Name":"المدخل الغربي"}},{"type":"Feature","id":3,"geometry":{"type":"LineString","coordinates":[[35.18485580519355,31.961812868884408],[35.184863604730211,31.961682016727483]]},"properties":{"OBJECTID":3,"Shape_Length":14.528588509672456,"Name":null}}]
-}
