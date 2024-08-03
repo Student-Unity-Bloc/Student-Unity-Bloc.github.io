@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>خريطة تفاعلية لجامعة بيرزيت</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        #map { height: 500px; }
+        .cafeteria-icon {
+            font-size: 20px; /* حجم الأيقونة */
+            color: red; /* لون الأيقونة */
+        }
+        .leaf-icon {
+            font-size: 5px; /* حجم أيقونة الشجرة */
+            color: green; /* لون أيقونة الشجرة */
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        // إضافة طبقة الخلفية (خريطة CartoDB Dark Matter)
+        var map = L.map('map');
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+        // متغير لتخزين الطبقات
+        var overlays = {};
+
+        // تحميل الطبقات GeoJSON
+        var geojsonFiles = [
+            {name: "الكليات الإدارية", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Administrative%20Faculties.geojson", style: {color: "#4B0082", fillColor: "#4B0082", fillOpacity: 0.5}}, // بنفسجي غامق
+            {name: "الحدود", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Border.geojson", style: {
+                color: "white", // لون الحدود الخارجي أبيض
+                weight: 2,
+                fillColor: "white", // لون التعبئة الداخلي أبيض
+                fillOpacity: 0.5
+            }},
+            {name: "الكافتيريا", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Cafeteria.geojson", pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'cafeteria-icon',
+                        html: '<i class="fas fa-utensils"></i>', // رمز الشوكة والسكينة
+                        iconSize: [20, 20] // حجم الأيقونة 20x20 بكسل
+                    })
+                });
+            }},
+            {name: "الكليات", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Colleges.geojson", style: {color: "#8B4513", fillColor: "#8B4513", fillOpacity: 0.5}}, // بيج غامق
+            {name: "القاعات", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Halls.geojson", style: {color: "#FFA500", fillColor: "#FFA500", fillOpacity: 0.5}}, // برتقالي فاتح
+            {name: "مواقف السيارات", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Parking.geojson", style: {
+                color: "#2B2B2B", // لون الحدود أغمق من الشوارع
+                weight: 2,
+                fillColor: "#2B2B2B", // لون التعبئة أغمق من الشوارع
+                fillOpacity: 0.5 // شفافية قليلة للملء
+            }},
+            {name: "الخدمات", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Services.geojson", style: {color: "#FFC0CB", fillColor: "#FFC0CB", fillOpacity: 0.5}}, // زهري
+            {name: "الأشجار", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Trees.geojson", pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'leaf-icon',
+                        html: '<i class="fas fa-tree"></i>', // رمز الشجرة
+                        iconSize: [5, 5] // حجم الأيقونة 5x5 بكسل
+                    })
+                });
+            }},
+            {name: "المداخل", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/doorways.geojson", pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'doorway-icon',
+                        html: '<i class="fas fa-door-open"></i>', // رمز المدخل
+                        iconSize: [20, 20] // حجم الأيقونة 20x20 بكسل
+                    })
+                }).bindPopup(feature.properties.Name); // إضافة اسم البوابة كبوب أب
+            }},
+            {name: "الشوارع", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/street.geojson", style: {
+                color: "#4F4F4F", // لون الحدود أسود فاتح
+                weight: 2,
+                fillColor: "#4F4F4F", // لون التعبئة أسود فاتح
+                fillOpacity: 0.5
+            }}
+        ];
+
+        geojsonFiles.forEach(function(layer) {
+            fetch(layer.url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    var geoJsonLayer = L.geoJson(data, {
+                        style: layer.style || {},
+                        pointToLayer: layer.pointToLayer || function (feature, latlng) { return L.marker(latlng); }
+                    }).addTo(map);
+                    overlays[layer.name] = geoJsonLayer;
+
+                    // إذا كانت الطبقة هي Border.geojson، قم بتحديد العرض
+                    if (layer.name === "الحدود") {
+                        map.fitBounds(geoJsonLayer.getBounds());
+                    }
+
+                    updateLayerControl();
+                })
+                .catch(error => console.error('Error loading ' + layer.name + ' geojson:', error));
+        });
+
+        // إضافة عنصر تحكم للطبقات
+        var baseMaps = {};
+        var layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+
+        // تحديث عنصر التحكم للطبقات
+        function updateLayerControl() {
+            layerControl.remove();
+            layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+        }
+    </script>
+</body>
+</html>
