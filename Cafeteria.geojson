@@ -1,0 +1,4 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [{"type":"Feature","id":1,"geometry":{"type":"Point","coordinates":[35.181271781139436,31.958068703567076]},"properties":{"OBJECTID":1,"name":"كافيتيريا العلوم"}},{"type":"Feature","id":2,"geometry":{"type":"Point","coordinates":[35.182219289986108,31.960419646344903]},"properties":{"OBJECTID":2,"name":"كافيتيريا الدوم"}},{"type":"Feature","id":3,"geometry":{"type":"Point","coordinates":[35.182423284445754,31.960735644469029]},"properties":{"OBJECTID":3,"name":"كافيتيريا الاداب"}},{"type":"Feature","id":4,"geometry":{"type":"Point","coordinates":[35.181547262215638,31.959853602085307]},"properties":{"OBJECTID":4,"name":"المجمع"}}]
+}
