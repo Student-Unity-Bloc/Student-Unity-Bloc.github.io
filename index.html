@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>خريطة تفاعلية لجامعة بيرزيت</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .cafeteria-icon {
+            font-size: 20px;
+            color: red;
+        }
+        .leaf-icon {
+            font-size: 5px;
+            color: green;
+        }
+        .doorway-icon {
+            font-size: 20px;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        // إضافة طبقة الخلفية (خريطة CartoDB Dark Matter)
+        var map = L.map('map').setView([31.9466, 35.3026], 16); // ضبط الإحداثيات لموقع جامعة بيرزيت
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+        // متغير لتخزين الطبقات
+        var overlays = {};
+
+        // تحميل طبقات GeoJSON
+        function loadGeoJsonLayers() {
+            var geojsonFiles = [
+                {name: "Administrative Faculties", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Administrative_Faculties.geojson", style: {color: "#8B4513", fillColor: "#8B4513", fillOpacity: 0.5}}, // بني غامق
+                {name: "Border", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Border.geojson", style: {color: "beige", weight: 2, fillColor: "beige", fillOpacity: 0.5}}, // بيج
+                {name: "Cafeteria", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Cafeteria.geojson", pointToLayer: function (feature, latlng) {
+                    return L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'cafeteria-icon',
+                            html: '<i class="fas fa-utensils"></i>',
+                            iconSize: [20, 20]
+                        })
+                    });
+                }},
+                {name: "Halls", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Halls.geojson", style: {color: "#FFA500", fillColor: "#FFA500", fillOpacity: 0.5}}, // برتقالي فاتح
+                {name: "Parking", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Parking.geojson", style: {color: "#000000", weight: 2, dashArray: "5, 5", fillColor: "#000000", fillOpacity: 0.5}}, // اسود
+                {name: "Services", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Services.geojson", style: {color: "#8A2BE2", fillColor: "#8A2BE2", fillOpacity: 0.5}}, // بنفسجي
+                {name: "Trees", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Trees.geojson", pointToLayer: function (feature, latlng) {
+                    return L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'leaf-icon',
+                            html: '<i class="fas fa-tree"></i>',
+                            iconSize: [5, 5]
+                        })
+                    });
+                }},
+                {name: "Doorways", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/doorways.geojson", pointToLayer: function (feature, latlng) {
+                    return L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'doorway-icon',
+                            html: '<i class="fas fa-door-open"></i>',
+                            iconSize: [20, 20]
+                        })
+                    }).bindPopup(feature.properties.Name);
+                }},
+                {name: "Street", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/street.geojson", style: {color: "#D3D3D3", weight: 2, fillColor: "#D3D3D3", fillOpacity: 0.5}}, // رمادي فاتح
+                {name: "Colleges", url: "https://raw.githubusercontent.com/Student-Unity-Bloc/Student-Unity-Bloc.github.io/main/Colleges.geojson", style: {color: "#8B4513", fillColor: "#8B4513", fillOpacity: 0.5}} // بني غامق
+            ];
+
+            geojsonFiles.forEach(function(layer) {
+                fetch(layer.url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Loaded ' + layer.name + ' data:', data); // رسالة تصحيح
+                        var geoJsonLayer = L.geoJson(data, {
+                            style: layer.style || {},
+                            pointToLayer: layer.pointToLayer || function (feature, latlng) { return L.marker(latlng); },
+                            onEachFeature: function (feature, layer) {
+                                if (layer.name === "Administrative Faculties" || layer.name === "Doorways") {
+                                    layer.bindPopup(function () {
+                                        var properties = feature.properties;
+                                        return '<strong>' + properties.Name + '</strong>';
+                                    });
+                                }
+                            }
+                        }).addTo(map);
+                        overlays[layer.name] = geoJsonLayer;
+
+                        if (layer.name === "Border") {
+                            map.fitBounds(geoJsonLayer.getBounds());
+                        }
+
+                        updateLayerControl();
+                    })
+                    .catch(error => console.error('Error loading ' + layer.name + ' geojson:', error));
+            });
+        }
+
+        // إضافة عنصر تحكم للطبقات
+        var baseMaps = {};
+        var layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+
+        // تحديث عنصر التحكم للطبقات
+        function updateLayerControl() {
+            layerControl.remove();
+            layerControl = L.control.layers(baseMaps, overlays).addTo(map);
+        }
+
+        loadGeoJsonLayers();
+    </script>
+</body>
+</html>
+
+
